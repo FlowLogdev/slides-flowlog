@@ -11,3 +11,4 @@ Slides Keys
 slides-flowlog/
 
 .vercel
+.env*
