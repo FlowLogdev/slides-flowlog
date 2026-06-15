@@ -1,0 +1,33 @@
+{
+  "name": "slides-flowlog",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3008",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "pptxgenjs": "^3.12.0",
+    "jspdf": "^2.5.1",
+    "docx": "^8.5.0",
+    "file-saver": "^2.0.5",
+    "@anthropic-ai/sdk": "^0.27.0",
+    "openai": "^4.52.0",
+    "clsx": "^2.1.1",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/file-saver": "^2.0.7",
+    "typescript": "^5",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5"
+  }
+}

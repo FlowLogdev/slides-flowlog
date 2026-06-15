@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+.next/
+out/
+.env.local
+.env*.local
+*.log
+.vercel
+data/
+Slides Keys
+slides-flowlog/
+
+.vercel

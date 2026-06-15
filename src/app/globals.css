@@ -1,0 +1,93 @@
+/* src/app/globals.css */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand: #0ACF83;
+  --brand-dim: #08a869;
+  --brand-glow: rgba(10, 207, 131, 0.12);
+  --ink: #0d0f0e;
+  --ink2: #3a3d3b;
+  --ink3: #6b6e6c;
+  --ink4: #9ba09d;
+  --surface: #ffffff;
+  --surface2: #f5f7f6;
+  --surface3: #edf0ee;
+  --border: rgba(0, 0, 0, 0.08);
+  --border2: rgba(0, 0, 0, 0.14);
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  /* Pinvest palette */
+  --pinvest-ink: #0d0e11;
+  --pinvest-paper: #f5f2ec;
+  --pinvest-gold: #b8972a;
+  --pinvest-gold-light: #d4b04a;
+  --pinvest-gold-pale: rgba(184, 151, 42, 0.12);
+  --pinvest-mid: #6b6459;
+  --pinvest-rule: rgba(184, 151, 42, 0.25);
+  --pinvest-font: 'Cormorant Garamond', 'Garamond', serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+button { cursor: pointer; }
+textarea { font-family: var(--font-body); }
+select { font-family: var(--font-body); }
+
+/* Print styles for PDF export */
+@media print {
+  nav, .canvas-toolbar, .slides-panel, .props-panel, .share-bar { display: none !important; }
+  .slide-canvas { box-shadow: none !important; width: 100% !important; max-width: 100% !important; }
+}
+
+/* Slide canvas Pinvest overrides */
+.theme-pinvest {
+  background: var(--pinvest-ink) !important;
+}
+.theme-pinvest .slide-title {
+  font-family: var(--pinvest-font) !important;
+  color: var(--pinvest-paper) !important;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.theme-pinvest .slide-content {
+  font-family: var(--pinvest-font) !important;
+  color: #c5bfb3 !important;
+  font-weight: 300;
+}
+.theme-pinvest .accent-bar {
+  background: var(--pinvest-gold) !important;
+}
+/* Pinvest top gold rule on slide */
+.theme-pinvest::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--pinvest-gold);
+}
+/* Pinvest grid pattern */
+.theme-pinvest .pinvest-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(184,151,42,0.04) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(184,151,42,0.04) 0 1px, transparent 1px 80px);
+  pointer-events: none;
+}
