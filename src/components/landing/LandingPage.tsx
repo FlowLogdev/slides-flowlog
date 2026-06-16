@@ -244,7 +244,7 @@ export default function LandingPage() {
             </div>
             {error && <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'left' }}>{error}</p>}
             <p style={{ fontSize: 12, color: '#4b5563' }}>
-              Don't have access yet?{' '}
+              Don&apos;t have access yet?{' '}
               <button type="button" onClick={() => { setMode('landing'); setError('') }} style={{ background: 'none', border: 'none', color: '#f5c800', cursor: 'pointer', fontSize: 12, fontFamily: "'DM Sans', sans-serif", textDecoration: 'underline' }}>
                 Request it
               </button>

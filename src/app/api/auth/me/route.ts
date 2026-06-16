@@ -3,7 +3,7 @@ import { validateSession } from '@/lib/db'
 import { cookies } from 'next/headers'
 
 export async function GET(_req: NextRequest) {
-  const token = cookies().get('sf_session')?.value
+  const token = (await cookies()).get('sf_session')?.value
   if (!token) return NextResponse.json({ authenticated: false }, { status: 401 })
 
   const session = await validateSession(token)

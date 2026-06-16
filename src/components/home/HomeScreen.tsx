@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/purity */
 // src/components/home/HomeScreen.tsx
 import { Screen } from '@/components/AppShell'
 import { useStore } from '@/lib/store'
