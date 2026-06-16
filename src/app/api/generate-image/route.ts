@@ -30,7 +30,6 @@ Style: ${style || 'modern corporate photography, clean and professional'}.`
       n: 1,
       size: '1792x1024',   // closest to 16:9 widescreen
       quality: 'standard',
-      response_format: 'url',
     })
 
     const imageUrl = response.data?.[0]?.url
