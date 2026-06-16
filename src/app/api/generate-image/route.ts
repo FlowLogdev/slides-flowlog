@@ -25,14 +25,15 @@ Cinematic lighting, high resolution, 16:9 aspect ratio.
 Style: ${style || 'modern corporate photography, clean and professional'}.`
 
     const response = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: enhancedPrompt,
       n: 1,
-      size: '1792x1024',   // closest to 16:9 widescreen
-      quality: 'standard',
+      size: '1536x1024',
+      quality: 'medium',
     })
 
-    const imageUrl = response.data?.[0]?.url
+    const image = response.data?.[0]
+    const imageUrl = image?.url || (image?.b64_json ? `data:image/png;base64,${image.b64_json}` : undefined)
     if (!imageUrl) throw new Error('No image URL returned')
 
     return NextResponse.json({ url: imageUrl })
