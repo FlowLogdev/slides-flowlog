@@ -4,7 +4,7 @@
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import { randomBytes } from 'crypto'
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const DB_FILE = path.join(DATA_DIR, 'users.json')
@@ -57,6 +57,45 @@ async function saveDB(db: Database): Promise<void> {
 
 function requiredAdmins(): string[] {
   return (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+}
+
+function sessionSecret(): string {
+  return process.env.ADMIN_PASSWORD || process.env.SESSION_SECRET || 'slides-flowlog-local-session-secret'
+}
+
+function signAdminSession(email: string, expiresAt: number): string {
+  return createHmac('sha256', sessionSecret()).update(`${email}:${expiresAt}`).digest('base64url')
+}
+
+export function isAdminEmail(email: string): boolean {
+  return requiredAdmins().includes(email.trim().toLowerCase())
+}
+
+export function createAdminSession(email: string): string {
+  const normalizedEmail = email.trim().toLowerCase()
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000
+  const encodedEmail = Buffer.from(normalizedEmail, 'utf8').toString('base64url')
+  const signature = signAdminSession(normalizedEmail, expiresAt)
+  return `admin.${encodedEmail}.${expiresAt}.${signature}`
+}
+
+function validateAdminSession(token: string): { email: string } | null {
+  const [kind, encodedEmail, expiresAtRaw, signature] = token.split('.')
+  if (kind !== 'admin' || !encodedEmail || !expiresAtRaw || !signature) return null
+
+  const expiresAt = Number(expiresAtRaw)
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null
+
+  const email = Buffer.from(encodedEmail, 'base64url').toString('utf8').trim().toLowerCase()
+  if (!isAdminEmail(email)) return null
+
+  const expected = signAdminSession(email, expiresAt)
+  const expectedBuffer = Buffer.from(expected)
+  const signatureBuffer = Buffer.from(signature)
+  if (expectedBuffer.length !== signatureBuffer.length) return null
+  if (!timingSafeEqual(expectedBuffer, signatureBuffer)) return null
+
+  return { email }
 }
 
 function createApprovedAdmin(email: string): User {
@@ -191,6 +230,9 @@ export async function createSession(email: string): Promise<string> {
 }
 
 export async function validateSession(token: string): Promise<{ email: string } | null> {
+  const adminSession = validateAdminSession(token)
+  if (adminSession) return adminSession
+
   const db = await getDB()
   const session = db.sessions.find(s => s.token === token && s.expiresAt > Date.now())
   return session ? { email: session.email } : null
