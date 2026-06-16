@@ -39,6 +39,18 @@ const propLabel: React.CSSProperties = {
   fontSize: 11.5, fontWeight: 600, color: 'var(--ink4)',
   textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
 }
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--border2)',
+  borderRadius: 8,
+  padding: '10px 11px',
+  fontSize: 13,
+  outline: 'none',
+  color: 'var(--ink)',
+  background: 'var(--surface)',
+  lineHeight: 1.5,
+  fontFamily: 'var(--font-body)',
+}
 
 export default function EditorScreen({ onNavigate }: Props) {
   const {
@@ -279,7 +291,7 @@ export default function EditorScreen({ onNavigate }: Props) {
       <div style={{ borderLeft: '1px solid var(--border)', overflowY: 'auto', background: 'white', display: 'flex', flexDirection: 'column' }}>
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          {(['design','layout','export'] as const).map(tab => (
+          {(['edit','design','layout','export'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
               flex: 1, padding: '12px 0', fontSize: 13, fontWeight: 500, textTransform: 'capitalize',
               border: 'none', background: 'none', cursor: 'pointer',
@@ -291,6 +303,47 @@ export default function EditorScreen({ onNavigate }: Props) {
         </div>
 
         <div style={{ padding: 16, flex: 1 }}>
+          {/* EDIT TAB */}
+          {activeTab === 'edit' && (
+            <>
+              <div style={propLabel}>Slide title</div>
+              <textarea
+                value={slide?.title || ''}
+                onChange={e => updateSlide(currentSlideIndex, { title: e.target.value })}
+                rows={3}
+                placeholder="Write the headline for this slide"
+                style={{ ...fieldStyle, resize: 'vertical', marginBottom: 16, fontSize: 14, fontWeight: 650 }}
+              />
+
+              <div style={propLabel}>On-slide copy</div>
+              <textarea
+                value={slide?.content || ''}
+                onChange={e => updateSlide(currentSlideIndex, { content: e.target.value })}
+                rows={10}
+                placeholder="Add one bullet or sentence per line"
+                style={{ ...fieldStyle, resize: 'vertical', marginBottom: 16 }}
+              />
+
+              <div style={propLabel}>Speaker notes</div>
+              <textarea
+                value={slide?.notes || ''}
+                onChange={e => updateSlide(currentSlideIndex, { notes: e.target.value })}
+                rows={7}
+                placeholder="Add presenter notes, objections, or talk track"
+                style={{ ...fieldStyle, resize: 'vertical', marginBottom: 16 }}
+              />
+
+              <div style={propLabel}>Image prompt</div>
+              <textarea
+                value={slide?.imagePrompt || ''}
+                onChange={e => updateSlide(currentSlideIndex, { imagePrompt: e.target.value })}
+                rows={5}
+                placeholder="Describe the visual background for this slide"
+                style={{ ...fieldStyle, resize: 'vertical' }}
+              />
+            </>
+          )}
+
           {/* DESIGN TAB */}
           {activeTab === 'design' && (
             <>

@@ -60,8 +60,8 @@ Required JSON format:
   "slides": [
     {
       "title": "Slide Title",
-      "content": "Bullet or line 1\\nBullet or line 2\\nBullet or line 3",
-      "notes": "Speaker notes — 2-3 sentences of genuine talking points",
+      "content": "Bullet or line 1\\nBullet or line 2\\nBullet or line 3\\nBullet or line 4\\nBullet or line 5",
+      "notes": "Speaker notes - 3-5 sentences of genuine talking points, objections, and delivery guidance",
       "layout": "default",
       "emoji": "${emojiChar}",
       "imagePrompt": "A photorealistic image of..."
@@ -71,7 +71,7 @@ Required JSON format:
 
 LAYOUT RULES (strictly follow):
 - Slide 1: layout = "${layoutFirst}" — hero/title, no bullets, just a bold statement
-- Slides 2 to ${count - 1}: layout = "${layoutMid}" — body content with 3-5 bullets
+- Slides 2 to ${count - 1}: layout = "${layoutMid}" — body content with 4-6 substantial bullets
 - Slide ${count}: layout = "${layoutLast}" — call-to-action or summary, centered
 - Use "split" for 1-2 comparison slides in the middle
 
@@ -79,8 +79,12 @@ CONTENT RULES:
 - Tone: ${tone}
 - Language: ${language}
 - Each content line is plain text, no markdown, separated by \\n
-- 3-5 bullets per content slide, each 8-15 words, punchy and specific
-- Speaker notes: genuine, conversational talking points — not a repeat of bullets
+- Do not write thin slides. Every body slide needs 4-6 substantial lines.
+- Each content line should be 10-20 words, specific enough to present without extra research.
+- Include buyer pain, business impact, process, proof, pricing, risk, implementation, and next step where relevant.
+- Avoid generic phrases like "key insight", "our approach", "unlock potential", "seamless", and "next-gen".
+- Speaker notes must be 3-5 complete sentences with presenter talk track, not a repeat of bullets.
+- If the prompt is commercial or sales-oriented, write as a persuasive buyer-facing sales deck.
 
 IMAGE PROMPT RULES (for imagePrompt field):
 - Write a vivid, detailed DALL-E 3 prompt for a slide background or visual
@@ -101,7 +105,7 @@ Slide count: exactly ${count}. Not one more, not one less.`
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
+      max_tokens: 12000,
       system: systemPrompt,
       messages: [{ role: 'user', content: userContent }],
     })
@@ -141,8 +145,14 @@ Slide count: exactly ${count}. Not one more, not one less.`
     const looksGeneric = parsed.slides.some((s: any) =>
       /^(key point|the challenge|our approach|key results|next steps)$/i.test(String(s.title || '').trim())
     )
+    const looksSparse = parsed.slides.some((s: any, i: number) => {
+      if (i === 0 || i === parsed.slides.length - 1) return false
+      const lines = String(s.content || '').split('\n').map(line => line.trim()).filter(Boolean)
+      const wordCount = lines.join(' ').split(/\s+/).filter(Boolean).length
+      return lines.length < 4 || wordCount < 38
+    })
 
-    if ((mode === 'paste' || mode === 'import') && sourceText.length > 120 && looksGeneric) {
+    if (((mode === 'paste' || mode === 'import') && sourceText.length > 120 && looksGeneric) || looksSparse) {
       const local = buildLocalDeck({ mode, prompt, pastedText, slideCount: count, tone, language, template, generateImages })
       return NextResponse.json({
         title: local.title,
@@ -157,7 +167,7 @@ Slide count: exactly ${count}. Not one more, not one less.`
           mode,
           template: template || null,
           imagesRequested: !!generateImages,
-          fallbackReason: 'AI response used generic placeholder slide titles',
+          fallbackReason: looksSparse ? 'AI response was too sparse for a complete deck' : 'AI response used generic placeholder slide titles',
         },
       })
     }

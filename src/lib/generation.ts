@@ -278,6 +278,31 @@ function pickLinesForSlide(sentences: string[], index: number, total: number): s
     .slice(0, index === 0 || index === total - 1 ? 2 : 4)
 }
 
+function enrichContentLines(topic: string, title: string, lines: string[], index: number, total: number): string[] {
+  if (index === 0 || index === total - 1) return lines.slice(0, 3)
+
+  const additions = [
+    `Buyer impact: ${topic} turns this issue into a visible business decision`,
+    `Operational value: teams get a repeatable workflow instead of scattered follow-up`,
+    `Proof point: the slide should connect the claim to risk, cost, speed, or confidence`,
+    `Decision lens: make the next action clear for the stakeholder in the room`,
+    `Implementation detail: show how ${topic} fits into work the team already performs`,
+  ]
+
+  const cleaned = lines.map(sentenceCase).filter(Boolean)
+  const used = new Set(cleaned.map(line => line.toLowerCase()))
+  for (const addition of additions) {
+    if (cleaned.length >= 5) break
+    const candidate = sentenceCase(addition.replace('the slide', title.toLowerCase()))
+    if (!used.has(candidate.toLowerCase())) {
+      cleaned.push(candidate)
+      used.add(candidate.toLowerCase())
+    }
+  }
+
+  return cleaned.slice(0, 5)
+}
+
 function parseNarrativeSlides(source: string, count: number, template?: string | null): Slide[] {
   const topic = inferTopic(source)
   const sentences = splitScriptSentences(source)
@@ -288,7 +313,7 @@ function parseNarrativeSlides(source: string, count: number, template?: string |
     const contentLines = picked.length
       ? picked
       : [`Use the ${topic} script section for this moment`, `Connect this point back to ${topic}`]
-    const content = contentLines.join('\n')
+    const content = enrichContentLines(topic, title, contentLines, i, titles.length).join('\n')
     const noteLines = sentences.slice(
       Math.floor((i / Math.max(titles.length, 1)) * Math.max(sentences.length - 1, 0)),
       Math.floor((i / Math.max(titles.length, 1)) * Math.max(sentences.length - 1, 0)) + 3
@@ -379,7 +404,8 @@ function parsePromptSlides(prompt: string, count: number, template?: string | nu
   ]
 
   return titles.map((title, i) => {
-    const content = (sections[i] || sections[sections.length - 1]).join('\n')
+    const contentLines = enrichContentLines(topic, title, sections[i] || sections[sections.length - 1], i, titles.length)
+    const content = contentLines.join('\n')
     return {
       id: String(i),
       title,

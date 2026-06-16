@@ -7,103 +7,173 @@ import { useStore } from '@/lib/store'
 interface Props { onNavigate: (s: Screen) => void }
 
 const STEPS = [
-  { label: 'Analyzing your content',      sub: 'Understanding structure and intent'            },
-  { label: 'Structuring the deck',         sub: 'Creating a logical narrative flow'             },
-  { label: 'Writing slide content',        sub: 'Crafting compelling copy with Claude AI'       },
-  { label: 'Generating slide images',      sub: 'Creating visuals with DALL-E 3 · takes ~30s'  },
-  { label: 'Finalizing your presentation', sub: 'Applying theme, fonts and layout'              },
+  { label: 'Analyze', sub: 'Reading the brief' },
+  { label: 'Structure', sub: 'Building the story' },
+  { label: 'Write', sub: 'Drafting slide copy' },
+  { label: 'Visuals', sub: 'Creating backgrounds' },
+  { label: 'Finish', sub: 'Opening the editor' },
 ]
 
 export default function GeneratingScreen({ onNavigate }: Props) {
-  const { loadingStep, presentation } = useStore()
+  const {
+    loadingStep, generationPreviewSlides, generationActiveSlide,
+    generationTitle, generationStatus, presentation, isGenerating,
+  } = useStore()
   const [dots, setDots] = useState('.')
 
   useEffect(() => {
-    const t = setInterval(() => setDots(d => d.length >= 3 ? '.' : d + '.'), 500)
+    const t = setInterval(() => setDots(d => d.length >= 3 ? '.' : d + '.'), 450)
     return () => clearInterval(t)
   }, [])
 
-  const current = STEPS[Math.min(loadingStep - 1, STEPS.length - 1)] || STEPS[0]
-  const progress = Math.round((loadingStep / STEPS.length) * 100)
+  const active = generationPreviewSlides[generationActiveSlide] || generationPreviewSlides[0]
+  const progress = Math.min(100, Math.round((Math.max(loadingStep, 1) / STEPS.length) * 100))
 
   return (
     <div style={{
-      minHeight: 'calc(100vh - 57px)', background: '#0d0f0e',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 32,
+      height: 'calc(100vh - 57px)',
+      background: '#080b10',
+      color: '#f5f7f6',
+      display: 'grid',
+      gridTemplateColumns: '280px minmax(260px, 420px) 1fr',
+      overflow: 'hidden',
     }}>
-      {/* Animated logo */}
-      <div style={{ marginBottom: 40, position: 'relative' }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: 20, background: 'rgba(10,207,131,0.12)',
-          border: '2px solid rgba(10,207,131,0.3)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 30, animation: 'breathe 2s ease-in-out infinite',
-        }}>✦</div>
-        <div style={{
-          position: 'absolute', inset: -8, borderRadius: 28,
-          border: '2px solid rgba(10,207,131,0.15)',
-          animation: 'ping 2s cubic-bezier(0,0,0.2,1) infinite',
-        }}></div>
-      </div>
-
-      {/* Current step label */}
-      <div style={{ textAlign: 'center', marginBottom: 32, maxWidth: 440 }}>
-        <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 22, fontWeight: 800, color: '#f5f7f6', marginBottom: 8, letterSpacing: '-0.3px' }}>
-          {current.label}{dots}
-        </h2>
-        <p style={{ fontSize: 14, color: '#6b6e6c', fontWeight: 300 }}>{current.sub}</p>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ width: '100%', maxWidth: 400, marginBottom: 40 }}>
-        <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 100, height: 4, overflow: 'hidden' }}>
-          <div style={{
-            height: '100%', background: 'linear-gradient(90deg,#0ACF83,#08a869)',
-            borderRadius: 100, width: `${progress}%`,
-            transition: 'width 0.8s ease',
-          }}></div>
+      <aside style={{ borderRight: '1px solid rgba(255,255,255,0.08)', padding: 24, display: 'flex', flexDirection: 'column' }}>
+        <button
+          onClick={() => onNavigate('create')}
+          disabled={isGenerating}
+          style={{
+            alignSelf: 'flex-start', border: '1px solid rgba(255,255,255,0.12)', background: 'transparent',
+            color: isGenerating ? '#4b5563' : '#cbd5e1', borderRadius: 8, padding: '7px 10px',
+            fontSize: 12, cursor: isGenerating ? 'not-allowed' : 'pointer', marginBottom: 24,
+          }}
+        >
+          Back
+        </button>
+        <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#0ACF83', marginBottom: 12 }}>
+          Live generation
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 12, color: '#6b6e6c' }}>
-          <span>Step {Math.min(loadingStep, STEPS.length)} of {STEPS.length}</span>
-          <span style={{ color: '#0ACF83', fontWeight: 600 }}>{progress}%</span>
-        </div>
-      </div>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontSize: 25, lineHeight: 1.1, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+          {generationTitle || presentation?.title || 'Creating your deck'}
+        </h1>
+        <p style={{ margin: '0 0 28px', color: '#94a3b8', fontSize: 13, lineHeight: 1.6 }}>
+          {generationStatus || 'Preparing the first draft'}{isGenerating ? dots : ''}
+        </p>
 
-      {/* Step list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 400 }}>
-        {STEPS.map((step, i) => {
-          const done    = i < loadingStep - 1
-          const active  = i === loadingStep - 1
-          const pending = i > loadingStep - 1
-          return (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              opacity: pending ? 0.3 : 1,
-              transition: 'opacity .4s',
-            }}>
-              <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: `2px solid ${done ? '#0ACF83' : active ? '#0ACF83' : 'rgba(255,255,255,0.15)'}`,
-                background: done ? '#0ACF83' : active ? 'rgba(10,207,131,0.12)' : 'transparent',
-                fontSize: 12, color: done ? 'white' : active ? '#0ACF83' : '#6b6e6c',
-                transition: 'all .3s',
-              }}>
-                {done ? '✓' : active ? <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>◌</span> : i + 1}
+        <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden', marginBottom: 22 }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: '#0ACF83', transition: 'width .45s ease' }} />
+        </div>
+
+        <div style={{ display: 'grid', gap: 10 }}>
+          {STEPS.map((step, i) => {
+            const done = i < loadingStep - 1
+            const current = i === loadingStep - 1
+            return (
+              <div key={step.label} style={{ display: 'grid', gridTemplateColumns: '28px 1fr', gap: 10, alignItems: 'center', opacity: done || current ? 1 : 0.38 }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: 8,
+                  background: done ? '#0ACF83' : current ? 'rgba(10,207,131,0.15)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${done || current ? '#0ACF83' : 'rgba(255,255,255,0.12)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: done ? '#07120d' : current ? '#0ACF83' : '#64748b',
+                  fontSize: 12, fontWeight: 800,
+                }}>
+                  {done ? '✓' : i + 1}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 650 }}>{step.label}</div>
+                  <div style={{ fontSize: 11.5, color: '#64748b' }}>{step.sub}</div>
+                </div>
               </div>
+            )
+          })}
+        </div>
+      </aside>
+
+      <section style={{ borderRight: '1px solid rgba(255,255,255,0.08)', padding: 18, overflowY: 'auto', background: '#0b0f16' }}>
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{generationPreviewSlides.length || 0} slides</div>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {generationPreviewSlides.map((slide, i) => (
+            <div key={slide.id || i} style={{
+              border: `1px solid ${i === generationActiveSlide ? '#0ACF83' : 'rgba(255,255,255,0.09)'}`,
+              background: i === generationActiveSlide ? 'rgba(10,207,131,0.08)' : 'rgba(255,255,255,0.035)',
+              borderRadius: 8,
+              padding: 10,
+              aspectRatio: '16/9',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              boxShadow: i === generationActiveSlide ? '0 0 0 3px rgba(10,207,131,0.08)' : 'none',
+            }}>
               <div>
-                <div style={{ fontSize: 13.5, fontWeight: done || active ? 500 : 400, color: done ? '#9ba09d' : active ? '#f5f7f6' : '#6b6e6c' }}>{step.label}</div>
+                <div style={{ fontSize: 10, color: '#0ACF83', marginBottom: 8 }}>Slide {i + 1}</div>
+                <div style={{ fontFamily: 'var(--font-head)', fontSize: 13, fontWeight: 750, lineHeight: 1.2, color: '#f8fafc' }}>
+                  {slide.title || 'Untitled'}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gap: 4 }}>
+                {(slide.content ? slide.content.split('\n') : ['']).slice(0, 3).map((line, j) => (
+                  <div key={j} style={{
+                    height: line ? 'auto' : 5,
+                    minHeight: 5,
+                    borderRadius: 99,
+                    background: line ? 'transparent' : 'rgba(255,255,255,0.14)',
+                    color: '#94a3b8',
+                    fontSize: 8.5,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {line}
+                  </div>
+                ))}
               </div>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
 
-      <style>{`
-        @keyframes breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-        @keyframes ping { 75%,100%{transform:scale(1.4);opacity:0} }
-        @keyframes spin { to{transform:rotate(360deg)} }
-      `}</style>
+      <main style={{ padding: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <div style={{
+          width: 'min(900px, 100%)',
+          aspectRatio: '16/9',
+          background: active?.imageUrl
+            ? `linear-gradient(rgba(8,11,16,.74), rgba(8,11,16,.8)), url(${active.imageUrl}) center/cover`
+            : 'radial-gradient(circle at 78% 20%, rgba(10,207,131,.22), transparent 34%), linear-gradient(135deg,#101827,#05070b)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 12,
+          boxShadow: '0 28px 90px rgba(0,0,0,0.45)',
+          padding: '7% 8%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: '#0ACF83' }} />
+          <div style={{ fontSize: 12, color: '#0ACF83', marginBottom: 18, letterSpacing: '0.13em', textTransform: 'uppercase' }}>
+            Slide {generationActiveSlide + 1}
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-head)', fontSize: 'clamp(30px,4vw,56px)', lineHeight: 1.02, letterSpacing: '-0.035em', margin: '0 0 24px' }}>
+            {active?.title || 'Drafting slide'}
+          </h2>
+          <div style={{ display: 'grid', gap: 12, maxWidth: 720 }}>
+            {(active?.content || '').split('\n').filter(Boolean).slice(0, 7).map((line, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '18px 1fr', gap: 12, alignItems: 'start' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0ACF83', marginTop: 9 }} />
+                <span style={{ color: '#dbe7e2', fontSize: 'clamp(15px,1.4vw,20px)', lineHeight: 1.48 }}>{line}</span>
+              </div>
+            ))}
+            {!active?.content && (
+              <>
+                <div style={{ width: '84%', height: 15, borderRadius: 99, background: 'rgba(255,255,255,0.14)' }} />
+                <div style={{ width: '62%', height: 15, borderRadius: 99, background: 'rgba(255,255,255,0.1)' }} />
+                <div style={{ width: '72%', height: 15, borderRadius: 99, background: 'rgba(255,255,255,0.08)' }} />
+              </>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

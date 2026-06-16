@@ -11,7 +11,11 @@ interface AppState {
   // UI state
   isGenerating: boolean
   loadingStep: number
-  activeTab: 'design' | 'layout' | 'export'
+  generationTitle: string
+  generationPreviewSlides: Slide[]
+  generationActiveSlide: number
+  generationStatus: string
+  activeTab: 'edit' | 'design' | 'layout' | 'export'
   selectedTemplateId: string | null
 
   // Saved presentations
@@ -29,7 +33,12 @@ interface AppState {
   setFont: (font: string) => void
   setIsGenerating: (v: boolean) => void
   setLoadingStep: (step: number) => void
-  setActiveTab: (tab: 'design' | 'layout' | 'export') => void
+  resetGenerationPreview: (title?: string) => void
+  setGenerationStatus: (status: string) => void
+  setGenerationActiveSlide: (index: number) => void
+  setGenerationPreviewSlides: (slides: Slide[]) => void
+  updateGenerationPreviewSlide: (index: number, updates: Partial<Slide>) => void
+  setActiveTab: (tab: 'edit' | 'design' | 'layout' | 'export') => void
   savePresentation: () => void
   loadPresentation: (id: string) => void
   deletePresentation: (id: string) => void
@@ -52,7 +61,11 @@ export const useStore = create<AppState>()(
       currentSlideIndex: 0,
       isGenerating: false,
       loadingStep: 0,
-      activeTab: 'design',
+      generationTitle: '',
+      generationPreviewSlides: [],
+      generationActiveSlide: 0,
+      generationStatus: '',
+      activeTab: 'edit',
       selectedTemplateId: null,
       savedPresentations: [],
 
@@ -100,6 +113,20 @@ export const useStore = create<AppState>()(
       setFont: (font) => set(state => state.presentation ? { presentation: { ...state.presentation, font } } : state),
       setIsGenerating: (v) => set({ isGenerating: v }),
       setLoadingStep: (step) => set({ loadingStep: step }),
+      resetGenerationPreview: (title = '') => set({
+        generationTitle: title,
+        generationPreviewSlides: [],
+        generationActiveSlide: 0,
+        generationStatus: 'Preparing deck',
+      }),
+      setGenerationStatus: (generationStatus) => set({ generationStatus }),
+      setGenerationActiveSlide: (generationActiveSlide) => set({ generationActiveSlide }),
+      setGenerationPreviewSlides: (generationPreviewSlides) => set({ generationPreviewSlides }),
+      updateGenerationPreviewSlide: (index, updates) => set(state => {
+        const slides = [...state.generationPreviewSlides]
+        slides[index] = { ...slides[index], ...updates }
+        return { generationPreviewSlides: slides, generationActiveSlide: index }
+      }),
       setActiveTab: (tab) => set({ activeTab: tab }),
 
       savePresentation: () => set(state => {

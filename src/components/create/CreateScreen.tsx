@@ -93,7 +93,11 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
   const [error, setError]             = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { setPresentation, setIsGenerating, setLoadingStep } = useStore()
+  const {
+    setPresentation, setIsGenerating, setLoadingStep,
+    resetGenerationPreview, setGenerationStatus, setGenerationPreviewSlides,
+    updateGenerationPreviewSlide,
+  } = useStore()
   const cfg = MODE_CONFIG[mode]
   const isPinvest = selectedTemplate?.startsWith('pinvest')
   const tmpl = BUILTIN_TEMPLATES.find(t => t.id === selectedTemplate)
@@ -108,6 +112,17 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
     setError('')
     setIsGenerating(true)
     setLoadingStep(1)
+    resetGenerationPreview(mainPrompt || text || 'New presentation')
+    setGenerationPreviewSlides(
+      Array.from({ length: slideCount }, (_, i) => ({
+        id: String(i),
+        title: i === 0 ? 'Reading your brief' : `Drafting slide ${i + 1}`,
+        content: '',
+        notes: '',
+        layout: i === 0 ? 'centered' : i === slideCount - 1 ? 'centered' : 'default',
+        emoji: cfg.icon,
+      }))
+    )
     onNavigate('generating')
 
     // Step animation — labels will be shown in GeneratingScreen
@@ -120,6 +135,7 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
 
     try {
       // 1. Generate slide content via Anthropic
+      setGenerationStatus('Claude is building the story arc')
       const genRes = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,9 +154,31 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
         slides = buildLocalDeck({ mode, prompt: mainPrompt, pastedText: text, slideCount, tone, language, template: selectedTemplate, generateImages }).slides
       }
 
+      setLoadingStep(3)
+      setGenerationStatus('Writing slide copy')
+      for (let i = 0; i < slides.length; i++) {
+        const slide = slides[i]
+        updateGenerationPreviewSlide(i, {
+          ...slide,
+          content: '',
+        })
+        const lines = slide.content.split('\n').filter(Boolean)
+        let written = ''
+        for (const line of lines) {
+          written = written ? `${written}\n${line}` : line
+          updateGenerationPreviewSlide(i, { content: written })
+          await new Promise(resolve => setTimeout(resolve, 120))
+        }
+        if (!lines.length) {
+          updateGenerationPreviewSlide(i, { content: slide.content })
+          await new Promise(resolve => setTimeout(resolve, 120))
+        }
+      }
+
       // 2. Generate images via OpenAI DALL-E 3 (in parallel, best-effort)
       if (generateImages) {
         setLoadingStep(4)
+        setGenerationStatus('Creating visual direction')
         const imageStyle = isPinvest
           ? 'luxury financial photography, dark blue navy tones, gold accents, editorial corporate'
           : tone === 'creative' ? 'vibrant modern illustration, bold colors'
@@ -167,6 +205,7 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
         for (let i = 0; i < imagePromises.length; i += 3) {
           const batch = await Promise.all(imagePromises.slice(i, i + 3))
           batched.push(...batch)
+          batch.forEach((slide, offset) => updateGenerationPreviewSlide(i + offset, slide))
         }
         slides = batched
       }
@@ -188,10 +227,13 @@ export default function CreateScreen({ mode, onModeChange, onNavigate }: Props) 
     } catch (err: any) {
       console.error(err)
       const pres = buildLocalDeck({ mode, prompt: mainPrompt, pastedText: text, slideCount, tone, language, template: selectedTemplate, generateImages })
+      setGenerationStatus('Using local deck builder')
+      setGenerationPreviewSlides(pres.slides)
       setPresentation(pres)
     } finally {
       clearInterval(stepInterval)
       setLoadingStep(5)
+      setGenerationStatus('Opening editor')
       setIsGenerating(false)
       setTimeout(() => onNavigate('editor'), 500)
     }
