@@ -9,5 +9,12 @@ export async function GET(_req: NextRequest) {
   const session = await validateSession(token)
   if (!session) return NextResponse.json({ authenticated: false }, { status: 401 })
 
-  return NextResponse.json({ authenticated: true, email: session.email })
+  return NextResponse.json(
+    { authenticated: true, email: session.email },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+      }
+    }
+  )
 }
