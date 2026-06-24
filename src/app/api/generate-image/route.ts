@@ -25,11 +25,11 @@ Cinematic lighting, high resolution, 16:9 aspect ratio.
 Style: ${style || 'modern corporate photography, clean and professional'}.`
 
     const response = await openai.images.generate({
-      model: 'gpt-image-1',
+      model: 'dall-e-3',
       prompt: enhancedPrompt,
       n: 1,
-      size: '1536x1024',
-      quality: 'medium',
+      size: '1792x1024',
+      quality: 'standard',
     })
 
     const image = response.data?.[0]
